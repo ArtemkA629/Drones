@@ -1,5 +1,6 @@
 using UnityEngine;
 
-public class Storage : MonoBehaviour, IGoal
+public abstract class Storage : MonoBehaviour, IGoal
 {
+    public abstract void OnDroneReached();
 }

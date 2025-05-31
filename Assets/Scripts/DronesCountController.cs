@@ -14,25 +14,27 @@ public class DronesCountController : MonoBehaviour
     [SerializeField] private DroneInfo _droneInfo;
     [SerializeField] private Collider _spawnArea;
 
-    private List<Drone> activeDrones = new List<Drone>();
-    private int targetDroneCount = 0;
-    private Coroutine adjustmentCoroutine;
+    private List<Drone> _activeDrones = new List<Drone>();
+    private int _targetDroneCount = 0;
+    private Coroutine _adjustmentCoroutine;
+
+    public List<Drone> ActiveDrones => _activeDrones;
 
     public void OnSliderChanged(float value)
     {
-        targetDroneCount = Mathf.RoundToInt(value);
+        _targetDroneCount = Mathf.RoundToInt(value);
 
-        if (adjustmentCoroutine != null) StopCoroutine(adjustmentCoroutine);
-        adjustmentCoroutine = StartCoroutine(AdjustDroneCount());
+        if (_adjustmentCoroutine != null) StopCoroutine(_adjustmentCoroutine);
+        _adjustmentCoroutine = StartCoroutine(AdjustDroneCount());
     }
 
     private IEnumerator AdjustDroneCount()
     {
-        while (activeDrones.Count != targetDroneCount)
+        while (_activeDrones.Count != _targetDroneCount)
         {
-            if (activeDrones.Count < targetDroneCount)
+            if (_activeDrones.Count < _targetDroneCount)
                 SpawnDrone();
-            else if (activeDrones.Count > targetDroneCount)
+            else if (_activeDrones.Count > _targetDroneCount)
                 RemoveDrone();
 
             yield return new WaitForSeconds(_spawnInterval);
@@ -45,17 +47,17 @@ public class DronesCountController : MonoBehaviour
         Drone drone = _diContainer.InstantiatePrefabForComponent<Drone>(_dronePrefab);
         drone.transform.position = spawnPosition;
         drone.Init(_droneInfo);
-        activeDrones.Add(drone);
+        _activeDrones.Add(drone);
     }
 
     private void RemoveDrone()
     {
-        if (activeDrones.Count == 0) return;
+        if (_activeDrones.Count == 0) return;
 
-        int lastIndex = activeDrones.Count - 1;
-        Drone drone = activeDrones[lastIndex];
-        Destroy(activeDrones[lastIndex].gameObject);
-        activeDrones.RemoveAt(lastIndex);
+        int lastIndex = _activeDrones.Count - 1;
+        Drone drone = _activeDrones[lastIndex];
+        Destroy(_activeDrones[lastIndex].gameObject);
+        _activeDrones.RemoveAt(lastIndex);
     }
 
     Vector3 GetRandomPointInCollider()

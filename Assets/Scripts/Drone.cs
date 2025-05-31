@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.AI;
 using Zenject;
@@ -51,11 +52,19 @@ public class Drone : MonoBehaviour
     private void OnGoalReached(GameObject reachedGoal)
     {
         if (reachedGoal == _info.Storage)
+        {
+            if (reachedGoal.TryGetComponent(out Storage storage))
+                storage.OnDroneReached();
+            else
+                throw new Exception("storage not find");
             _currentGoal = null;
+        }
         else
         {
-            if (_currentGoal.TryGetComponent(out Source source))
+            if (reachedGoal.TryGetComponent(out Source source))
                 ApplyCollect(source);
+            else
+                throw new Exception("source not find");
             _currentGoal = _info.Storage;
         }
     }
