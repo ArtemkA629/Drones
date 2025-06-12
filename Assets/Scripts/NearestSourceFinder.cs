@@ -1,13 +1,11 @@
-using System.Collections;
 using UnityEngine;
 using Zenject;
 
 public class NearestSourceFinder : ISourceFinder
 {
-    private SourcesPool _sourcesPool;
-    private Transform _finder;
+    private readonly SourcesPool _sourcesPool;
+    private readonly Transform _finder;
 
-    [Inject]
     public NearestSourceFinder(Transform finder, SourcesPool sourcesPool)
     {
         _finder = finder;

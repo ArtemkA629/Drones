@@ -1,91 +1,122 @@
-using System;
 using UnityEngine;
 using UnityEngine.AI;
 using Zenject;
 
+[RequireComponent(typeof(NavMeshAgent), typeof(LineRenderer))]
 public class Drone : MonoBehaviour
 {
-    [Inject] private SourcesPool _sourcesPool;
-
     [SerializeField] private NavMeshAgent _agent;
+    [SerializeField] private LineRenderer _lineRenderer;
+    [SerializeField] private Storage _storage;
+    [SerializeField] private DroneConfig _config;
 
     private ISourceFinder _sourceFinder;
     private IDroneMovement _movement;
-    private IReachingChecker _reachingChecker;
-    private DroneInfo _info;
-    private GameObject _currentGoal;
+    private ReachingChecker _reachingChecker;
+    private PathShower _pathShower;
+    private DroneState _state;
+    private Goal _currentGoal;
     private Coroutine _goalReachingCoroutine;
     private Source _carryingSource;
 
-    public void Init(DroneInfo info)
+    [Inject]
+    public void Init(SourcesPool sourcesPool)
     {
-        _sourceFinder = new NearestSourceFinder(transform, _sourcesPool);
+        _sourceFinder = new NearestSourceFinder(transform, sourcesPool);
         _movement = new NavMeshMovement(_agent);
-        _reachingChecker = new ClassicReachingChecker(_agent);
-        _info = info;
+        _reachingChecker = new (_agent, _config.ReachDistance);
+        _pathShower = new PathShower(_agent, _lineRenderer, _config.Material);
+        _state = DroneState.SourceFinding;
 
         _reachingChecker.GoalReached += OnGoalReached;
     }
 
     private void Update()
     {
-        if (_currentGoal == _info.Storage)
+        _pathShower.Show();
+
+        if (_state == DroneState.SourceFound)
             return;
 
-        var nearestGoal = _sourceFinder.Find()?.gameObject;
-        if (nearestGoal == _currentGoal || nearestGoal == null)
+        var nearestGoal = _sourceFinder.Find();
+        if (nearestGoal == null || !nearestGoal.gameObject.activeInHierarchy)
+            ResetGoal();
+        else if (nearestGoal == _currentGoal)
             return;
 
-        _currentGoal = nearestGoal;
-        if (_goalReachingCoroutine != null)
-            StopCoroutine(_goalReachingCoroutine);
-        ApplyMovement();
+        ChangeGoal(nearestGoal);
     }
 
     private void OnDisable()
     {
-        _reachingChecker.GoalReached -= OnGoalReached;
         if (_carryingSource != null)
-            _carryingSource.OnCollected -= OnSourceCollected;
+            _carryingSource.OnPicked -= OnSourcePicked;
+
+        StopReaching();
+        _currentGoal = null;
+        _carryingSource = null;
     }
 
-    private void OnGoalReached(GameObject reachedGoal)
+    private void OnDestroy()
     {
-        if (reachedGoal == _info.Storage)
+        _reachingChecker.GoalReached -= OnGoalReached;
+    }
+
+    private void ChangeGoal(Goal goal)
+    {
+        _currentGoal = goal;
+        StopReaching();
+        ApplyMovement();
+    }
+
+    private void ResetGoal()
+    {
+        _state = DroneState.SourceFinding;
+        _currentGoal = null;
+        StopReaching();
+    }
+
+    private void StopReaching()
+    {
+        if (_goalReachingCoroutine != null)
+            StopCoroutine(_goalReachingCoroutine);
+    }
+
+    private void OnGoalReached(Goal goal)
+    {
+        if (goal is Storage storage)
         {
-            if (reachedGoal.TryGetComponent(out Storage storage))
-                storage.OnDroneReached();
-            else
-                throw new Exception("storage not find");
+            _state = DroneState.SourceFinding;
+            storage.OnDroneReached();
             _currentGoal = null;
         }
         else
         {
-            if (reachedGoal.TryGetComponent(out Source source))
-                ApplyCollect(source);
-            else
-                throw new Exception("source not find");
-            _currentGoal = _info.Storage;
+            _state = DroneState.SourceFound;
+            var source = (Source)goal;
+            ApplyPicking(source);
+            _currentGoal = _storage;
         }
     }
 
     private void ApplyMovement()
     {
-        _movement.MoveTo(_currentGoal.transform.position);
+        var movingPosition = _currentGoal == null ? Vector3.zero : _currentGoal.transform.position;
+        _movement.MoveTo(movingPosition);
         _goalReachingCoroutine = StartCoroutine(_reachingChecker.CheckDistance(_currentGoal));
     }
 
-    private void ApplyCollect(Source source)
+    private void ApplyPicking(Source source)
     {
-        source.OnCollected += OnSourceCollected;
-        source.Collect(this);
+        source.OnPicked += OnSourcePicked;
+        source.OnDroneReached(transform);
         _carryingSource = source;
     }
 
-    private void OnSourceCollected(Source source)
+    private void OnSourcePicked(Source source)
     {
         ApplyMovement();
-        source.OnCollected -= OnSourceCollected;
+        source.OnPicked -= OnSourcePicked;
         _carryingSource = null;
     }
 }

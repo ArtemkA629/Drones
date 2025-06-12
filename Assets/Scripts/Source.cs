@@ -1,46 +1,52 @@
+using DG.Tweening;
 using System;
 using UnityEngine;
-using UnityEngine.Pool;
 
-public abstract class Source : MonoBehaviour, IGoal, ICollectable
+public class Source : Goal
 {
-    protected IObjectPool<Source> _pool;
-    protected bool _isTaking;
+    [SerializeField] private SourceConfig _config;
 
     private Vector3 _initialScale;
+    private bool _isTaking;
 
-    public abstract event Action<Source> OnCollected;
+    public event Action<Source> OnPicked;
 
-    protected Vector3 InitialScale => _initialScale;
-
+    public Vector3 InitialScale => _initialScale;
     public bool IsTaking => _isTaking;
 
-    protected virtual void Start()
+    public void Init()
     {
         _initialScale = transform.localScale;
+        StartInfiniteRotation();
     }
 
-    public void SetPoolReference(IObjectPool<Source> pool)
+    public void OnDroneReached(Transform drone)
     {
-        _pool = pool;
+        _isTaking = true;
+        AnimatePicking(drone);
     }
 
-    protected void ReturnToPool()
+    private void AnimatePicking(Transform drone)
     {
-        if (_pool != null)
-            _pool.Release(this);
-        else
+        Sequence sequence = DOTween.Sequence();
+        sequence.Append(transform.DOMove(drone.position, _config.DestroyDuration).SetEase(Ease.Linear));
+        sequence.Join(transform.DOScale(InitialScale * _config.ScaleDownFactor, _config.DestroyDuration));
+        sequence.OnComplete(() =>
+        {
+            OnPicked?.Invoke(this);
             Destroy(gameObject);
+        });
     }
 
-    public abstract void Collect(Drone drone);
-
-    public virtual void ResetParams()
+    private void StartInfiniteRotation()
     {
-        if (_initialScale == Vector3.zero)
-            return;
+        transform.DORotate(new Vector3(90f, 360f, 0f), _config.RotationDuration, RotateMode.FastBeyond360)
+            .SetEase(Ease.Linear)
+            .SetLoops(-1, LoopType.Incremental);
+    }
 
-        transform.localScale = _initialScale;
-        _isTaking = false;
+    private void OnDisable()
+    {
+        transform.DOKill();
     }
 }

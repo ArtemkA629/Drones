@@ -4,9 +4,7 @@ using UnityEngine.Pool;
 
 public class SourcesPool : MonoBehaviour
 {
-    [SerializeField] private Source _sourcePrefab;
-    [SerializeField] private int _defaultCapacity = 20;
-    [SerializeField] private int _maxPoolSize = 100;
+    [SerializeField] private SourcesPoolConfig _config;
     [SerializeField] private Transform _poolContainer;
 
     private IObjectPool<Source> _pool;
@@ -14,49 +12,6 @@ public class SourcesPool : MonoBehaviour
     private void Awake()
     {
         InitializePool();
-    }
-
-    private void InitializePool()
-    {
-        if (_poolContainer == null)
-        {
-            _poolContainer = new GameObject("CoinPoolContainer").transform;
-            _poolContainer.SetParent(transform);
-        }
-
-        _pool = new ObjectPool<Source>(
-            CreatePooledItem,
-            OnTakeFromPool,
-            OnReturnedToPool,
-            OnDestroyPoolObject,
-            true,
-            _defaultCapacity,
-            _maxPoolSize);
-    }
-
-    private Source CreatePooledItem()
-    {
-        Source source = Instantiate(_sourcePrefab, _poolContainer);
-        source.SetPoolReference(_pool);
-        source.ResetParams();
-        return source;
-    }
-
-    private void OnTakeFromPool(Source source)
-    {
-        source.gameObject.SetActive(true);
-        source.ResetParams();
-    }
-
-    private void OnReturnedToPool(Source source)
-    {
-        source.gameObject.SetActive(false);
-        source.transform.SetParent(_poolContainer);
-    }
-
-    private void OnDestroyPoolObject(Source source)
-    {
-        Destroy(source.gameObject);
     }
 
     public Source GetSource()
@@ -79,5 +34,46 @@ public class SourcesPool : MonoBehaviour
         }
 
         return sources.ToArray();
+    }
+
+    private void InitializePool()
+    {
+        if (_poolContainer == null)
+        {
+            _poolContainer = new GameObject("CoinPoolContainer").transform;
+            _poolContainer.SetParent(transform);
+        }
+
+        _pool = new ObjectPool<Source>(
+            CreatePooledItem,
+            OnTakeFromPool,
+            OnReturnedToPool,
+            OnDestroyPoolObject,
+            true,
+            _config.DefaultCapacity,
+            _config.MaxPoolSize);
+    }
+
+    private Source CreatePooledItem()
+    {
+        Source source = Instantiate(_config.SourcePrefab, _poolContainer);
+        source.Init();
+        return source;
+    }
+
+    private void OnTakeFromPool(Source source)
+    {
+        source.gameObject.SetActive(true);
+    }
+
+    private void OnReturnedToPool(Source source)
+    {
+        source.gameObject.SetActive(false);
+        source.transform.SetParent(_poolContainer);
+    }
+
+    private void OnDestroyPoolObject(Source source)
+    {
+        Destroy(source.gameObject);
     }
 }

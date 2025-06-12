@@ -1,19 +1,22 @@
-using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.AI;
+using Zenject;
 
-public class DronesSpeedController
+public class DronesSpeedController : MonoBehaviour
 {
-    private List<Drone>[] _drones;
+    [SerializeField] private DronesFraction[] _dronesFractions;
+    [SerializeField] private DronesSpeedSlider _slider;
 
-    public DronesSpeedController(List<Drone>[] drones)
+    [Inject]
+    public void Init()
     {
-        _drones = drones;
+        _slider.Init(this);
     }
 
     public void OnSliderChanged(float speed)
     {
-        foreach (var droneList in _drones)
-            foreach (var drone in droneList)
+        foreach (var fraction in _dronesFractions)
+            foreach (var drone in fraction)
                 drone.GetComponent<NavMeshAgent>().speed = speed;
     }
 }

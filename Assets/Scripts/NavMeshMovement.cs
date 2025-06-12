@@ -1,10 +1,9 @@
-﻿using System;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
 
 public class NavMeshMovement : IDroneMovement
 {
-    private NavMeshAgent _agent;
+    private readonly NavMeshAgent _agent;
 
     public NavMeshMovement(NavMeshAgent agent)
     {
@@ -13,6 +12,15 @@ public class NavMeshMovement : IDroneMovement
 
     public void MoveTo(Vector3 goal)
     {
-        _agent.destination = goal;
+        if (goal == Vector3.zero)
+        {
+            _agent.isStopped = true;
+            return;
+        }
+        else
+        {
+            _agent.isStopped = false;
+            _agent.destination = goal;
+        }
     }
 }

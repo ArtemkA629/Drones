@@ -3,27 +3,47 @@ using Zenject;
 
 public class SourcesSpawner : MonoBehaviour
 {
-    [Inject] private SourcesPool _pool;
+    [SerializeField] private SourcesSpawnerConfig _config;
 
-    [SerializeField] private float _spawnInterval = 1f;
-    [SerializeField] private Vector2 _spawnAreaSize = new Vector2(10f, 10f);
-    [SerializeField] private float _spawnHeight = 1f;
+    private SourcesPool _pool;
+    private float _spawnInterval;
 
-    private void Start()
+    public float SpawnInterval
     {
-        InvokeRepeating(nameof(SpawnSingleSource), 0f, _spawnInterval);
+        get => _spawnInterval;
+        set
+        {
+            _spawnInterval = Mathf.Clamp(value, 0f, Mathf.Infinity);
+            ChangeSpawnRate();
+        }
+    }
+
+    [Inject]
+    public void Init(SourcesPool pool)
+    {
+        _pool = pool;
+        ChangeSpawnRate();
     }
 
     private void SpawnSingleSource()
     {
         Source source = _pool.GetSource();
         source.transform.position = CalculateSpawnPosition();
+        source.Init();
     }
 
     private Vector3 CalculateSpawnPosition()
     {
-        float randomX = Random.Range(-_spawnAreaSize.x / 2, _spawnAreaSize.x / 2);
-        float randomZ = Random.Range(-_spawnAreaSize.y / 2, _spawnAreaSize.y / 2);
-        return transform.position + new Vector3(randomX, _spawnHeight, randomZ);
+        float randomX = Random.Range(-_config.SpawnAreaSize.x / 2, _config.SpawnAreaSize.x / 2);
+        float randomZ = Random.Range(-_config.SpawnAreaSize.y / 2, _config.SpawnAreaSize.y / 2);
+        return new Vector3(randomX, _config.SpawnHeight, randomZ);
+    }
+
+    private void ChangeSpawnRate()
+    {
+        CancelInvoke();
+
+        float parabolaXDelta = _config.SpawnIntervalModifier;
+        InvokeRepeating(nameof(SpawnSingleSource), _config.SpawnDelay, (_spawnInterval - parabolaXDelta) * (_spawnInterval - parabolaXDelta));
     }
 }

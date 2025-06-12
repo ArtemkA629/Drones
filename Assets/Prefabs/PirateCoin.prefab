@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 8784960211508970045}
   - component: {fileID: 453104893916351204}
   - component: {fileID: 4410755277712516159}
-  - component: {fileID: 5339233459662176017}
+  - component: {fileID: 105304137442485706}
   m_Layer: 0
   m_Name: PirateCoin
   m_TagString: Untagged
@@ -60,6 +60,9 @@ MeshRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 2
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
   m_RenderingLayerMask: 257
   m_RendererPriority: 0
   m_Materials:
@@ -107,7 +110,7 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -127844609115117539, guid: 5d0dbe9cd045eb6458b6aa0a6ffc0235, type: 3}
---- !u!114 &5339233459662176017
+--- !u!114 &105304137442485706
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -116,6 +119,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7889810436408296978}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 155c7ababa63761438cc270b83b51b8b, type: 3}
+  m_Script: {fileID: 11500000, guid: ea53d8961b0c40c45b6f98904bddded5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _config: {fileID: 11400000, guid: eeeb5ac5830d61c49bcbf2478031a198, type: 2}
